@@ -1,10 +1,21 @@
+import axios from 'axios';
+
 export default async function handler(req, res) {
-  // Allow CORS for your Shopify domain
-  res.setHeader('Access-Control-Allow-Origin', 'https://shopify-delete-ha4s1acac-karang-reksas-projects.vercel.app'); 
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS'); 
+  // Allow CORS from your actual Shopify store domain
+  const allowedOrigins = [
+    'https://shopify-delete-ha4s1acac-karang-reksas-projects.vercel.app',
+    'https://shopify-delete-igsf0cvh0-karang-reksas-projects.vercel.app',
+    'https://your-store.myshopify.com' // Ganti dengan domain Shopify Anda
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -14,20 +25,37 @@ export default async function handler(req, res) {
   }
 
   const { customerId } = req.body;
-  if (!customerId) return res.status(400).json({ error: 'customerId is required' });
+  
+  if (!customerId) {
+    return res.status(400).json({ error: 'customerId is required' });
+  }
 
   try {
     const SHOP = process.env.SHOPIFY_STORE;
     const TOKEN = process.env.SHOPIFY_ADMIN_API_ACCESS_TOKEN;
 
+    if (!SHOP || !TOKEN) {
+      throw new Error('Missing Shopify credentials');
+    }
+
     const response = await axios.delete(
       `https://${SHOP}.myshopify.com/admin/api/2025-07/customers/${customerId}.json`,
-      { headers: { "X-Shopify-Access-Token": TOKEN, "Content-Type": "application/json" } }
+      { 
+        headers: { 
+          "X-Shopify-Access-Token": TOKEN,
+          "Content-Type": "application/json" 
+        } 
+      }
     );
 
     return res.status(200).json({ success: true, data: response.data });
+    
   } catch (error) {
-    console.error(error.response?.data || error.message);
-    return res.status(500).json({ error: 'Failed to delete customer', details: error.response?.data });
+    console.error('Delete error:', error.response?.data || error.message);
+    return res.status(500).json({ 
+      success: false,
+      error: 'Failed to delete customer', 
+      details: error.response?.data || error.message 
+    });
   }
 }
