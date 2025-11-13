@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Replace with your Shopify Admin API credentials
+    // Replace with your Shopify Admin API credentials in .env
     const SHOP = process.env.SHOPIFY_STORE;
     const TOKEN = process.env.SHOPIFY_ADMIN_API_ACCESS_TOKEN;
 
@@ -20,15 +20,18 @@ export default async function handler(req, res) {
       `https://${SHOP}.myshopify.com/admin/api/2025-07/customers/${customerId}.json`,
       {
         headers: {
-          "X-Shopify-Access-Token": TOKEN,
-          "Content-Type": "application/json"
-        }
+          'X-Shopify-Access-Token': TOKEN,
+          'Content-Type': 'application/json',
+        },
       }
     );
 
     return res.status(200).json({ success: true, data: response.data });
   } catch (error) {
     console.error(error.response?.data || error.message);
-    return res.status(500).json({ error: 'Failed to delete customer', details: error.response?.data });
+    return res.status(500).json({
+      error: 'Failed to delete customer',
+      details: error.response?.data || error.message,
+    });
   }
 }
